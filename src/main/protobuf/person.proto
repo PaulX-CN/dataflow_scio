@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+option java_package = "org.paul.protos";
+option optimize_for = SPEED;
+
+enum Gender {
+    Male = 0;
+    Female = 1;
+}
+
+message Person {
+    string name = 1;
+    int32 id = 2;
+    int32 ts = 3;
+    Gender gender = 4;
+}
