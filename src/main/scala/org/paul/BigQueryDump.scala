@@ -10,6 +10,8 @@ import org.apache.beam.sdk.transforms.windowing._
 import org.apache.beam.sdk.options.PipelineOptions
 import org.apache.beam.sdk.io.gcp.bigquery._
 import com.spotify.scio.bigquery.BigQueryUtil
+import com.spotify.scio.values._
+import org.apache.beam.sdk.{Pipeline, PipelineResult}
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
 import org.joda.time.Duration
 
@@ -38,5 +40,44 @@ object BigQueryDump {
 
   def bigqueryOut(tableName: String): PTransform[PCollection[TableRow], PDone] =
     BigQueryIO.writeTableRows().to(tableName).asInstanceOf[PTransform[PCollection[TableRow], PDone]]
+
+
+  def main(cmdlineArgs: Array[String]): Unit = {
+    // Parse command line arguments and create Beam specific options plus application specific
+    // arguments
+    //
+    // - opts: `PipelineOptions` or its subtype - Beam pipeline options, where field names and types
+    // are defined as setters and getters in the Java interface
+    // - args: `Args` - application specific arguments, anything not covered by `opts` ends up here
+    val (opts, args) = ScioContext.parseArguments[PipelineOptions](cmdlineArgs)
+
+    // Create a new `ScioContext` with the given `PipelineOptions`
+    val sc = ScioContext(opts)
+
+    // Underlying Beam `Pipeline`
+    val pipeline: Pipeline = sc.pipeline
+
+    // Custom input with a Beam source `PTransform`
+    val accounts: SCollection[Account] = sc.customInput("Input", pubsubIn(args("inputTopic")))
+
+    // Underlying Beam `PCollection`
+    val p: PCollection[Account] = accounts.internal
+
+    accounts
+      // Beam `PTransform`
+      .applyTransform(window)
+      // Scio `map` transform
+      .map(a => KV.of(a.getName.toString, a.getAmount))
+      // Scio `map` transform
+      .map(kv => kv.getKey + "_" + kv.getValue)
+      // Custom output with a Beam sink `PTransform`
+      .saveAsCustomOutput("Output", pubsubOut(args("outputTopic")))
+
+    // This calls sc.pipeline.run() under the hood
+    val result = sc.close()
+
+    // Underlying Beam pipeline result
+    val pipelineResult: PipelineResult = result.internal
+  }
 }
 
