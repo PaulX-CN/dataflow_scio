@@ -58,20 +58,20 @@ object BigQueryDump {
     val pipeline: Pipeline = sc.pipeline
 
     // Custom input with a Beam source `PTransform`
-    val accounts: SCollection[Account] = sc.customInput("Input", pubsubIn(args("inputTopic")))
+    val accounts: SCollection[Person] = sc.customInput("Input", pubsubIn(args("inputTopic")))
 
     // Underlying Beam `PCollection`
-    val p: PCollection[Account] = accounts.internal
+    val p: PCollection[Person] = accounts.internal
 
     accounts
       // Beam `PTransform`
       .applyTransform(window)
       // Scio `map` transform
-      .map(a => KV.of(a.getName.toString, a.getAmount))
+      .map(a => KV.of(a.name, a.id))
       // Scio `map` transform
       .map(kv => kv.getKey + "_" + kv.getValue)
       // Custom output with a Beam sink `PTransform`
-      .saveAsCustomOutput("Output", pubsubOut(args("outputTopic")))
+      .saveAsCustomOutput("Output", bigqueryOut(args("outputTopic")))
 
     // This calls sc.pipeline.run() under the hood
     val result = sc.close()
