@@ -1,5 +1,7 @@
 syntax = "proto3";
 
+package protos;
+
 option java_package = "org.paul.protos";
 option optimize_for = SPEED;
 

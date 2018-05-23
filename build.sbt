@@ -4,6 +4,7 @@ import Keys._
 val scioVersion = "0.5.4"
 val beamVersion = "2.4.0"
 val scalaMacrosVersion = "2.1.1"
+val protobufVersion = "3.5.1"
 
 lazy val commonSettings = Defaults.coreDefaultSettings ++ Seq(
   // Semantic versioning http://semver.org/
@@ -41,8 +42,9 @@ lazy val root: Project = Project(
     "com.spotify" %% "scio-test" % scioVersion % "test",
     "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
     // optional dataflow runner
-    // "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
-    "org.slf4j" % "slf4j-simple" % "1.7.25"
+     "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
+    "org.slf4j" % "slf4j-simple" % "1.7.25",
+    "com.google.protobuf" % "protobuf-java" % protobufVersion
   )
 ).enablePlugins(PackPlugin)
 
@@ -60,11 +62,6 @@ lazy val repl: Project = Project(
   root
 )
 
-PB.targets in Compile := Seq(
-  scalapb.gen() -> (sourceManaged in Compile).value
-)
 
-// (optional) If you need scalapb/scalapb.proto or anything from
-// google/protobuf/*.proto
-libraryDependencies += "com.thesamet.scalapb" %% "scalapb-runtime" %
-  scalapb.compiler.Version.scalapbVersion % "protobuf"
+
+
