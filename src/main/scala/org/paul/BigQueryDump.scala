@@ -1,27 +1,41 @@
 package org.paul
 
 import java.text.SimpleDateFormat
+import java.util
 
-import com.spotify.scio._
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO
+import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.transforms.PTransform
+import org.apache.beam.sdk.coders.ByteArrayCoder
 import org.apache.beam.sdk.values._
-import org.paul.protos.PersonOuterClass.Person
 import org.apache.beam.sdk.options.PipelineOptions
-import com.spotify.scio.bigquery.TableRow
-import com.spotify.scio.values._
 import org.apache.beam.sdk.{Pipeline, PipelineResult}
 import org.apache.beam.sdk.io.gcp.bigquery.BigQueryIO
+import com.spotify.scio._
+import com.spotify.scio.bigquery.TableRow
+import com.spotify.scio.values._
 import com.spotify.scio.bigquery.CREATE_NEVER
 import com.spotify.scio.bigquery.WRITE_APPEND
+import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
+import org.apache.kafka.common.serialization.ByteArrayDeserializer
+import org.paul.protos.PersonOuterClass.Person
 
 
 object BigQueryDump {
 
 
+
   // A Beam native source `PTransform` where the input type is `PBegin`
   def pubsubIn(topic: String): PTransform[PBegin, PCollection[Person]] =
     PubsubIO.readProtos(classOf[Person]).fromTopic(topic)
+
+  def kafkaIn(topic: String): PTransform[PBegin, PCollection[Person]] = {
+
+    KafkaIO.readBytes()
+      .withTopic(topic)
+      .withValueDeserializerAndCoder(classOf[ByteArrayDeserializer], ByteArrayCoder.of())
+  }
+
 
   def tsToDate(ts: Long): String = {
     val df:SimpleDateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")

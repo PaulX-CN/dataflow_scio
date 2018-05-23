@@ -3,6 +3,7 @@ import Keys._
 
 val scioVersion = "0.5.4"
 val beamVersion = "2.4.0"
+val kafkaVersion = "1.1.0"
 val scalaMacrosVersion = "2.1.1"
 val protobufVersion = "3.5.1"
 
@@ -41,6 +42,8 @@ lazy val root: Project = Project(
     "com.spotify" %% "scio-core" % scioVersion,
     "com.spotify" %% "scio-test" % scioVersion % "test",
     "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
+    "org.apache.beam" % "beam-sdks-java-io-kafka" % beamVersion,
+    "org.apache.kafka" % "kafka-clients" % kafkaVersion,
     // optional dataflow runner
      "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
     "org.slf4j" % "slf4j-simple" % "1.7.25",
