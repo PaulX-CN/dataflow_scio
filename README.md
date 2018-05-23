@@ -28,3 +28,12 @@ Finally, compile the project and run:
 runMain org.paul.BigQueryDump --runner=DataflowRunner \
 --inputTopic=projects/$PROJECT_NAME/topics/myTopic --tableName=$PROJECT_NAME.dataflow_scio.person
 ```
+
+
+Optional: run the python script to randomly push events to pubsub.
+```bash
+pip3 install -r pubsub_proto/requirements.txt
+cd pubsub_proto
+protoc -I=. --python_out=. person.proto
+python pubsub_proto/publisher.py
+```
