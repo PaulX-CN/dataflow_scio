@@ -1,12 +1,12 @@
 package org.paul
 
 import java.text.SimpleDateFormat
-import java.util
+import com.typesafe.scalalogging._
 
+import org.slf4j.LoggerFactory
 import org.apache.beam.sdk.io.gcp.pubsub.PubsubIO
 import org.apache.beam.sdk.io.kafka.KafkaIO
 import org.apache.beam.sdk.transforms.PTransform
-import org.apache.beam.sdk.coders.ByteArrayCoder
 import org.apache.beam.sdk.values._
 import org.apache.beam.sdk.options.PipelineOptions
 import org.apache.beam.sdk.{Pipeline, PipelineResult}
@@ -16,7 +16,6 @@ import com.spotify.scio.bigquery.TableRow
 import com.spotify.scio.values._
 import com.spotify.scio.bigquery.CREATE_NEVER
 import com.spotify.scio.bigquery.WRITE_APPEND
-import org.apache.beam.sdk.extensions.protobuf.ProtoCoder
 import org.apache.kafka.common.serialization.ByteArrayDeserializer
 import org.paul.protos.PersonOuterClass.Person
 
@@ -24,16 +23,22 @@ import org.paul.protos.PersonOuterClass.Person
 object BigQueryDump {
 
 
+  val logger = Logger(LoggerFactory.getLogger(this.getClass))
 
   // A Beam native source `PTransform` where the input type is `PBegin`
   def pubsubIn(topic: String): PTransform[PBegin, PCollection[Person]] =
     PubsubIO.readProtos(classOf[Person]).fromTopic(topic)
 
-  def kafkaIn(topic: String): PTransform[PBegin, PCollection[Person]] = {
+  def kafkaIn(broker:String, topic: String): PTransform[PBegin, PCollection[KV[Array[Byte], Array[Byte]]]] = {
 
-    KafkaIO.readBytes()
+    KafkaIO.read()
+      .withBootstrapServers(broker)
       .withTopic(topic)
-      .withValueDeserializerAndCoder(classOf[ByteArrayDeserializer], ByteArrayCoder.of())
+      .withKeyDeserializer(classOf[ByteArrayDeserializer])
+      .withValueDeserializer(classOf[ByteArrayDeserializer])
+      .withReadCommitted()
+      .withProcessingTime()
+      .withoutMetadata()
   }
 
 
@@ -62,7 +67,10 @@ object BigQueryDump {
 
     val pipeline: Pipeline = sc.pipeline
 
-    val persons: SCollection[Person] = sc.customInput("Input", pubsubIn(args("inputTopic")))
+//    val persons: SCollection[Person] = sc.customInput("Input", pubsubIn(args("inputTopic")))
+
+    val personKafka: SCollection[KV[Array[Byte], Array[Byte]]] =
+      sc.customInput("Input", kafkaIn(args("inputBroker"), args("inputTopic")))
 
     def convertToTableRow(p: Person): TableRow = {
       val newRow = TableRow()
@@ -72,11 +80,23 @@ object BigQueryDump {
       newRow.set("ts", tsToDate(p.getTs))
     }
 
-    persons
-      // Beam `PTransform`
-      .map(convertToTableRow)
-      // Custom output with a Beam sink `PTransform`
-      .saveAsCustomOutput("Output", bigqueryOut(args("tableName")))
+    def decodeToPerson(kv: KV[Array[Byte], Array[Byte]]): Person = {
+      val bytes = kv.getValue
+      val p = Person.parseFrom(bytes)
+      logger.info(s"Here is a new person $p.")
+      p
+    }
+
+    personKafka
+        .map(decodeToPerson)
+        .map(convertToTableRow)
+        .saveAsCustomOutput("Output", bigqueryOut(args("tableName")))
+
+//    persons
+//      // Beam `PTransform`
+//      .map(convertToTableRow)
+//      // Custom output with a Beam sink `PTransform`
+//      .saveAsCustomOutput("Output", bigqueryOut(args("tableName")))
 
     // This calls sc.pipeline.run() under the hood
     val result = sc.close()

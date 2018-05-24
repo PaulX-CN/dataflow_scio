@@ -47,7 +47,8 @@ lazy val root: Project = Project(
     // optional dataflow runner
      "org.apache.beam" % "beam-runners-google-cloud-dataflow-java" % beamVersion,
     "org.slf4j" % "slf4j-simple" % "1.7.25",
-    "com.google.protobuf" % "protobuf-java" % protobufVersion
+    "com.google.protobuf" % "protobuf-java" % protobufVersion,
+    "com.typesafe.scala-logging" %% "scala-logging" % "3.1.0"
   )
 ).enablePlugins(PackPlugin)
 
