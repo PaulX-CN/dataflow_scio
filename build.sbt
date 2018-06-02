@@ -39,7 +39,6 @@ lazy val root: Project = Project(
   commonSettings ++ macroSettings ++ noPublishSettings,
   description := "dataflow_scio",
   libraryDependencies ++= Seq(
-    "com.google.api-client" % "google-api-client" % "1.22.0" force(),
     "com.spotify" %% "scio-core" % scioVersion,
     "com.spotify" %% "scio-test" % scioVersion % "test",
     "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
