@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
 
-val scioVersion = "0.5.4"
+val scioVersion = "0.5.5"
 val beamVersion = "2.4.0"
 val kafkaVersion = "1.1.0"
 val scalaMacrosVersion = "2.1.1"
@@ -39,6 +39,7 @@ lazy val root: Project = Project(
   commonSettings ++ macroSettings ++ noPublishSettings,
   description := "dataflow_scio",
   libraryDependencies ++= Seq(
+    "com.google.api-client" % "google-api-client" % "1.22.0" force(),
     "com.spotify" %% "scio-core" % scioVersion,
     "com.spotify" %% "scio-test" % scioVersion % "test",
     "org.apache.beam" % "beam-runners-direct-java" % beamVersion,
